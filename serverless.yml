@@ -43,6 +43,8 @@ plugins:
 functions:
   createNote:
     handler: handler.createNote
+    environment:
+      NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
     events:
       - httpApi:
           path: /notes
@@ -61,7 +63,7 @@ functions:
   updateNote:
     handler: handler.updateNote
     environment:
-      NOTES_TABLE_NAME: !Ref NotesTable   #Getting the name of the table from its logical name
+      NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
     events:
       - httpApi:
           path: /notes/{id}
@@ -73,11 +75,18 @@ functions:
         Resource: {"Fn::GetAtt" : [ "NotesTable", "Arn" ]}  #Getting ARN from logical name of the table
   deleteNote:
     handler: handler.deleteNote
+    environment:
+      NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
     events:
       - httpApi:
           path: /notes/{id}
           method: delete
-    
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - dynamodb:DeleteItem
+        Resource: {"Fn::GetAtt" : [ "NotesTable", "Arn" ]}  #Getting ARN from logical name of the table
+
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details

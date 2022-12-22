@@ -1,13 +1,15 @@
 'use strict';
+const { DataBrew } = require("aws-sdk");
 const DynamoDB = require("aws-sdk/clients/dynamodb");
 const documentClient = new DynamoDB.DocumentClient({region: 'us-east-1'});
+const NOTES_TABLE_NAME = process.env.NOTES_TABLE_NAME
 
 module.exports.createNote = async (event, context, cb) => {   //cb means callback. We use callback to send response to client
   console.log("Create note")
   let data = JSON.parse(event.body);    //event.body is stringified. 
   try {
     const params = {
-      TableName: 'notes',
+      TableName: NOTES_TABLE_NAME,
       Item: {
         notesId: data.id,
         title: data.title,
@@ -21,35 +23,60 @@ module.exports.createNote = async (event, context, cb) => {   //cb means callbac
       body: JSON.stringify(data)
     })
   } catch (err) {
-      cb(null, {            //
+      cb(null, {            
         statusCode: 500,
         body: JSON.stringify(err.message)
       })
   }
-
-  // return {
-  //   statusCode: 200,
-  //   body: JSON.stringify(
-  //     {
-  //       message: "Go Serverless v3.0! Your function executed successfully!",
-  //     },
-  //     null,
-  //     2
-  //   ),
-  // };
 }
 
-module.exports.getNote = async (event) => {
+module.exports.getNote = async (event, context, cb) => {
   const id = event.pathParameters.id;
-  console.log("get note ", id)
+  let data = JSON.parse(event.body);
+  try {
+
+  } catch (err) {
+    cb(null, { 
+      statusCode: 500,
+      body: JSON.stringify(err.message)
+    })
+  }
   return {
     statusCode: 200,
     body: JSON.stringify("Your note is " + id)
   }
 }
 
-module.exports.updateNote = async (event) => {
-  const id = event.pathParameters.id;
+module.exports.updateNote = async (event, context, cb) => {
+  const notesId = event.pathParameters.id;
+  let data = JSON.parse(event.body);
+  try {
+    const params = {
+      TableName: NOTES_TABLE_NAME,
+      Key: { notesId }, 
+      UpdateExpression: 'set #title = :title, #body = :body',  //The variables used are just placeholders. Their values are defined in ExpressionAttributeNames and ExpressionAttributeValues. We used placebolders instead of original names to avoid conflicts with reserved dynamodb names. 
+      ExpressionAttributeNames: {
+        '#title': 'title',
+        '#body': 'body'
+      },
+      ExpressionAttributeValues: {
+        ':title': data.title,
+        ':body': data.body
+      },
+      ConditionExpression: 'attribute_exists(notesId)'
+    }
+    await documentClient.update(params).promise();
+    cb(null, {           
+      statusCode: 200,
+      body: JSON.stringify(data)
+    })
+  } catch (err) {
+    cb(null, {           
+      statusCode: 500,
+      body: JSON.stringify(err.message)
+    })
+  }
+
   console.log("update note ", id)
   return {
     statusCode: 200,
@@ -57,12 +84,24 @@ module.exports.updateNote = async (event) => {
   }
 }
 
-module.exports.deleteNote = async (event) => {
-  const id = event.pathParameters.id;
-  console.log("delete note ", id)
-  return {
-    statusCode: 200,
-    body: JSON.stringify("Your note " + id + " is deleted")
+module.exports.deleteNote = async (event, context, cb) => {
+  const notesId = event.pathParameters.id;
+  try {
+    const params = {
+      TableName: NOTES_TABLE_NAME,
+      Key: { notesId }, 
+      ConditionExpression: 'attribute_exists(notesId)'
+    }
+    await documentClient.delete(params).promise();
+    cb(null, {
+      statusCode: 200,
+      body: "Deleted " + notesId
+    })
+  } catch (err) {
+    cb(null, {
+      statusCode: 500,
+      body: JSON.stringify(err.message)
+    })
   }
 }
 

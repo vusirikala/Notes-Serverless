@@ -1,7 +1,13 @@
 'use strict';
 const { DataBrew } = require("aws-sdk");
 const DynamoDB = require("aws-sdk/clients/dynamodb");
-const documentClient = new DynamoDB.DocumentClient({region: 'us-east-1'});
+const documentClient = new DynamoDB.DocumentClient({
+  region: 'us-east-1', 
+  maxRetries: 3,        //If dynamodDB has some errors, then sdk retries with exponential backoff with 50ms, 100ms, 200ms, ... gap. Maximum retries is 10. 
+  httpOptions: {
+    timeout: 5000       //Setting MongoDB timeout period to 5 seconds. After 5 seconds, sdk will retry the request. 
+  }
+});
 const NOTES_TABLE_NAME = process.env.NOTES_TABLE_NAME
 
 module.exports.createNote = async (event, context, cb) => {   //cb means callback. We use callback to send response to client

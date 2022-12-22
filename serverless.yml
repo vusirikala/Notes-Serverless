@@ -45,6 +45,7 @@ functions:
     handler: handler.createNote
     environment:
       NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1    #Every time, the lambda function makes a http request, it will do a handshake. This option will let the lambda function keep the connection alive for the next http request.  
     events:
       - httpApi:
           path: /notes
@@ -54,16 +55,26 @@ functions:
         Action:
           - "dynamodb:PutItem"
         Resource: {"Fn::GetAtt" : [ "NotesTable", "Arn" ]}  #Getting ARN from logical name of the table
-  getNote:
-    handler: handler.getNote
+  getAllNotes:
+    handler: handler.getAllNotes
+    environment:
+      NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     events:
       - httpApi:
-          path: /notes/{id}
+          path: /notes
           method: get
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - dynamodb:Scan
+        Resource: {"Fn::GetAtt" : [ "NotesTable", "Arn" ]}  #Getting ARN from logical name of the table
+
   updateNote:
     handler: handler.updateNote
     environment:
       NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     events:
       - httpApi:
           path: /notes/{id}
@@ -77,6 +88,7 @@ functions:
     handler: handler.deleteNote
     environment:
       NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     events:
       - httpApi:
           path: /notes/{id}

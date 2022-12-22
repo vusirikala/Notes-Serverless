@@ -5,7 +5,11 @@ const documentClient = new DynamoDB.DocumentClient({region: 'us-east-1'});
 const NOTES_TABLE_NAME = process.env.NOTES_TABLE_NAME
 
 module.exports.createNote = async (event, context, cb) => {   //cb means callback. We use callback to send response to client
-  console.log("Create note")
+  // Node js maintains an event queue. 
+  // The lamdba function stops only after the event queue is empty. 
+  // Waiting for API calls is one of the events stored in the event queue. 
+  // By setting callbackWaitsForEmptyEventLoop to false, we are specifying not to wait until event queue is empty
+  context.callbackWaitsForEmptyEventLoop = false;
   let data = JSON.parse(event.body);    //event.body is stringified. 
   try {
     const params = {
@@ -17,6 +21,7 @@ module.exports.createNote = async (event, context, cb) => {   //cb means callbac
       },
       ConditionExpression: 'attribute_not_exists(notesId)'  //This condition is always checked before inserting the document.  
     }
+    // The lambda function makes a http request to dynamodb to perform this operation. 
     await documentClient.put(params).promise();   //AWS allows us to call put method as a promise
     cb(null, {            //Second argument contains response in the {statusCode, body} format
       statusCode: 201,
@@ -30,24 +35,29 @@ module.exports.createNote = async (event, context, cb) => {   //cb means callbac
   }
 }
 
-module.exports.getNote = async (event, context, cb) => {
-  const id = event.pathParameters.id;
+module.exports.getAllNotes = async (event, context, cb) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+
   let data = JSON.parse(event.body);
   try {
-
+    const params = {
+      TableName: NOTES_TABLE_NAME,
+    }
+    const notes = await documentClient.scan(params).promise();
+    cb(null, {
+      statusCode: 200,
+      body: JSON.stringify(notes)
+    })
   } catch (err) {
     cb(null, { 
       statusCode: 500,
       body: JSON.stringify(err.message)
     })
   }
-  return {
-    statusCode: 200,
-    body: JSON.stringify("Your note is " + id)
-  }
 }
 
 module.exports.updateNote = async (event, context, cb) => {
+  context.callbackWaitsForEmptyEventLoop = false;
   const notesId = event.pathParameters.id;
   let data = JSON.parse(event.body);
   try {
@@ -85,6 +95,7 @@ module.exports.updateNote = async (event, context, cb) => {
 }
 
 module.exports.deleteNote = async (event, context, cb) => {
+  context.callbackWaitsForEmptyEventLoop = false;
   const notesId = event.pathParameters.id;
   try {
     const params = {

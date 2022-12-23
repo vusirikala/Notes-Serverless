@@ -41,15 +41,20 @@ plugins:
 #    - include-me-dir/**
 
 functions:
+  authorizer: 
+    handler: authorizer.handler
   createNote:
     handler: handler.createNote
     environment:
       NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1    #Every time, the lambda function makes a http request, it will do a handshake. This option will let the lambda function keep the connection alive for the next http request.  
     events:
-      - httpApi:
+      - http:
           path: /notes
           method: post
+          authorizer: 
+            type: token
+            name: authorizer
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -61,9 +66,12 @@ functions:
       NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     events:
-      - httpApi:
+      - http:
           path: /notes
           method: get
+          authorizer: 
+            type: token
+            name: authorizer
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -76,9 +84,12 @@ functions:
       NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     events:
-      - httpApi:
+      - http:
           path: /notes/{id}
           method: put
+          authorizer: 
+            type: token
+            name: authorizer
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -90,9 +101,12 @@ functions:
       NOTES_TABLE_NAME: {"Ref" : "NotesTable"}   #Getting the name of the table from its logical name
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
     events:
-      - httpApi:
+      - http:
           path: /notes/{id}
           method: delete
+          authorizer: 
+            type: token
+            name: authorizer
     iamRoleStatements:
       - Effect: "Allow"
         Action:

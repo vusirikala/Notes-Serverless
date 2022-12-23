@@ -42,6 +42,7 @@ module.exports.createNote = async (event, context, cb) => {   //cb means callbac
 }
 
 module.exports.getAllNotes = async (event, context, cb) => {
+  console.log(event);
   context.callbackWaitsForEmptyEventLoop = false;
 
   let data = JSON.parse(event.body);

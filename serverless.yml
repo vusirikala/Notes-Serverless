@@ -43,6 +43,10 @@ plugins:
 functions:
   authorizer: 
     handler: authorizer.handler
+    environment: 
+      COGNITO_USERPOOL_ID: {"Ref" : "CognitoUserPool"}
+      COGNITO_WEB_CLIENT_ID: {"Ref" : "UserPoolClient"}
+  
   createNote:
     handler: handler.createNote
     environment:
@@ -53,13 +57,15 @@ functions:
           path: /notes
           method: post
           authorizer: 
-            type: token
-            name: authorizer
+            name: userpool_authorizer
+            arn: ${ssm:/notes/dev/UserPoolId}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
           - "dynamodb:PutItem"
         Resource: {"Fn::GetAtt" : [ "NotesTable", "Arn" ]}  #Getting ARN from logical name of the table
+  
+  
   getAllNotes:
     handler: handler.getAllNotes
     environment:
@@ -70,14 +76,15 @@ functions:
           path: /notes
           method: get
           authorizer: 
-            type: token
-            name: authorizer
+            name: userpool_authorizer
+            arn: ${ssm:/notes/dev/UserPoolId}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
           - dynamodb:Scan
         Resource: {"Fn::GetAtt" : [ "NotesTable", "Arn" ]}  #Getting ARN from logical name of the table
 
+  
   updateNote:
     handler: handler.updateNote
     environment:
@@ -88,13 +95,15 @@ functions:
           path: /notes/{id}
           method: put
           authorizer: 
-            type: token
-            name: authorizer
+            name: userpool_authorizer
+            arn: ${ssm:/notes/dev/UserPoolId}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
           - dynamodb:UpdateItem
         Resource: {"Fn::GetAtt" : [ "NotesTable", "Arn" ]}  #Getting ARN from logical name of the table
+  
+  
   deleteNote:
     handler: handler.deleteNote
     environment:
@@ -105,8 +114,8 @@ functions:
           path: /notes/{id}
           method: delete
           authorizer: 
-            type: token
-            name: authorizer
+            name: userpool_authorizer
+            arn: ${ssm:/notes/dev/UserPoolId}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -155,19 +164,46 @@ functions:
 
 # you can add CloudFormation resource templates here
 resources:
- Resources:
-   NotesTable:
-     Type: AWS::DynamoDB::Table
-     Properties:
-      AttributeDefinitions:
-        - AttributeName: notesId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: notesId
-          KeyType: HASH             # We will use notesId as hash key. 
-      TableName: notes
-      BillingMode: PAY_PER_REQUEST
+  Resources:
+    
+    NotesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: notesId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: notesId
+            KeyType: HASH             # We will use notesId as hash key. 
+        TableName: notes
+        BillingMode: PAY_PER_REQUEST
+    
+    
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: NotesUserPool
 
+
+    UserPoolClient: 
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        UserPoolId: {"Ref" : "CognitoUserPool"}
+        ClientName: web
+      
+    
+    UserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        UserPoolId: {"Ref" : "CognitoUserPool"}
+        Domain: notes-demo-crud
+    
+    UserPoolIdParam:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /notes/dev/UserPoolId
+        Type: String
+        Value: {"Fn::GetAtt" : [ "CognitoUserPool", "Arn" ]}
 #  Outputs:
 #     NewOutput:
 #       Description: "Description for the output"

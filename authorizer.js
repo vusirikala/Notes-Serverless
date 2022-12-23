@@ -1,3 +1,14 @@
+//This library checks if the token is indeed generated from the specified user pool and if the token is expired. 
+//The library also supports user pool groups. We can see what group the user belongs to. 
+const {CognitoJwtVerifier} = require("aws-jwt-verify")
+const COGNITO_USERPOOL_ID = process.env.COGNITO_USERPOOL_ID;
+const COGNITO_WEB_CLIENT_ID = process.env.COGNITO_WEB_CLIENT_ID;
+
+const jwtVerifier = CognitoJwtVerifier.create({
+    userPoolId: COGNITO_USERPOOL_ID,
+    tokenUse: "id", //can be "id" or "access". "id" token will contains ome information about the user
+    clientId: COGNITO_WEB_CLIENT_ID  //We can create multiple clients for the same user pool. 
+})
 
 const generatePolicy = (principalId, effect, resource) => {
     var authResponse = {};
@@ -23,14 +34,22 @@ const generatePolicy = (principalId, effect, resource) => {
 }
 
 //lamdba authorizer
-module.exports.handler = (event, context, cb) => {
+module.exports.handler = async (event, context, cb) => {
     var token = event.authorizationToken;
-    switch (token) {
-        case "allow":
-            cb(null, generatePolicy("user", "Allow", event.methodArn))
-        case "deny":
-            cb(null, generatePolicy("user", "Deny", event.methodArn))
-        default:
-            cb(null, "Error: Invalid token")
-    }
+    try {
+        const payload = await jwtVerifier.verify(token);
+        console.log(payload);
+        cb(null, generatePolicy("user", "allow", event.methodArn))
+    }  catch (err) {
+        cb(null, "Error: Invalid token")
+    } 
+    
+    // switch (token) {
+    //     case "allow":
+    //         cb(null, generatePolicy("user", "Allow", event.methodArn))
+    //     case "deny":
+    //         cb(null, generatePolicy("user", "Deny", event.methodArn))
+    //     default:
+    //         cb(null, "Error: Invalid token")
+    // }
 }

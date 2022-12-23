@@ -4,7 +4,7 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs14.x
-  stage: dev
+  stage: ${opt:stage, 'dev'}  #opt stages stands for command line options. If --stage option is not specified in deploy command, then default is 'dev'
   region: us-east-1
 
 plugins: 
@@ -58,7 +58,7 @@ functions:
           method: post
           authorizer: 
             name: userpool_authorizer
-            arn: ${ssm:/notes/dev/UserPoolId}
+            arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -77,7 +77,7 @@ functions:
           method: get
           authorizer: 
             name: userpool_authorizer
-            arn: ${ssm:/notes/dev/UserPoolId}
+            arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -96,7 +96,7 @@ functions:
           method: put
           authorizer: 
             name: userpool_authorizer
-            arn: ${ssm:/notes/dev/UserPoolId}
+            arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -115,7 +115,8 @@ functions:
           method: delete
           authorizer: 
             name: userpool_authorizer
-            arn: ${ssm:/notes/dev/UserPoolId}
+            type: COGNITO_USER_POOLS
+            arn: {"Fn::GetAtt" : [ "CognitoUserPool", "Arn" ]}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -175,14 +176,14 @@ resources:
         KeySchema:
           - AttributeName: notesId
             KeyType: HASH             # We will use notesId as hash key. 
-        TableName: notes
+        TableName: notes-${self:provider.stage}
         BillingMode: PAY_PER_REQUEST
     
     
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
       Properties:
-        UserPoolName: NotesUserPool
+        UserPoolName: NotesUserPool-${self:provider.stage}
 
 
     UserPoolClient: 
@@ -190,18 +191,30 @@ resources:
       Properties:
         UserPoolId: {"Ref" : "CognitoUserPool"}
         ClientName: web
+        AllowedOAuthFlowsUserPoolClient: true
+        AllowedOAuthScopes:
+          - phone
+          - email
+          - profile
+          - openid
+        SupportedIdentityProviders:
+          - COGNITO
+        AllowedOAuthFlows:
+          - implicit
+        CallbackURLs:
+          - http://localhost:3000
       
     
     UserPoolDomain:
       Type: AWS::Cognito::UserPoolDomain
       Properties:
         UserPoolId: {"Ref" : "CognitoUserPool"}
-        Domain: notes-demo-crud
+        Domain: notesdemocrud-${self:provider.stage}
     
-    UserPoolIdParam:
+    UserPoolArnParam:
       Type: AWS::SSM::Parameter
       Properties:
-        Name: /notes/dev/UserPoolId
+        Name: /notes/${self:provider.stage}/UserPoolArn
         Type: String
         Value: {"Fn::GetAtt" : [ "CognitoUserPool", "Arn" ]}
 #  Outputs:

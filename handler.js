@@ -1,5 +1,4 @@
 'use strict';
-const { DataBrew } = require("aws-sdk");
 const DynamoDB = require("aws-sdk/clients/dynamodb");
 const documentClient = new DynamoDB.DocumentClient({
   region: 'us-east-1', 

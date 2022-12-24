@@ -23,14 +23,18 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install dependencies
       run: npm ci                                 #npm ci is similar to npm install, except that package-lock.json is not modified. 
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     - name: Install Plugin and Deploy
       uses: serverless/github-action@v3.1
       with:
         args: -c "serverless plugin install --name serverless-iam-roles-per-function && serverless deploy --stage dev"
         entrypoint: /bin/sh
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}     #AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY secrets have to be stored in the above environment of Github secrets
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      # env:
+      #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}     #AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY secrets have to be stored in the above environment of Github secrets
+      #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     - name: 'Create env file'
       run: echo "${{ secrets.ENV_FILE }}" > .env
     - name: Run test cases

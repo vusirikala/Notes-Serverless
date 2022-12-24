@@ -31,3 +31,13 @@ exports.we_invoke_createNote = (options) => {
    let response = makeHttpRequest("notes", "POST", options);
    return response;
 }
+
+exports.we_invoke_updateNote = (options) => {
+   let response = makeHttpRequest(`notes/${options.noteId}`, "PUT", options);
+   return response;
+}
+
+exports.we_invoke_deleteNote = (options) => {
+   let response = makeHttpRequest(`notes/${options.noteId}`, "DELETE", options);
+   return response;
+}

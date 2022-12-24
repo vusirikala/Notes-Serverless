@@ -21,9 +21,12 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm ci                                 #npm ci is similar to npm install, except that package-lock.json is not modified. 
-    - run: echo Running Test Cases
-    - run: npm test
+    - name: Install dependencies
+      run: npm ci                                 #npm ci is similar to npm install, except that package-lock.json is not modified. 
+    - name: 'Create env file'
+      run: echo "${{ secrets.ENV_FILE }}" > .env
+    - name: Run test cases
+      run: npm test
     - name: Install Plugin and Deploy
       uses: serverless/github-action@v3.1
       with:

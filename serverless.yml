@@ -56,9 +56,9 @@ functions:
       - http:
           path: /notes
           method: post
-          authorizer: 
-            name: userpool_authorizer
-            arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
+          # authorizer: 
+          #   name: userpool_authorizer
+          #   arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -75,9 +75,9 @@ functions:
       - http:
           path: /notes
           method: get
-          authorizer: 
-            name: userpool_authorizer
-            arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
+          # authorizer: 
+          #   name: userpool_authorizer
+          #   arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
     iamRoleStatements:
       - Effect: "Allow"
         Action:
@@ -94,9 +94,9 @@ functions:
       - http:
           path: /notes/{id}
           method: put
-          authorizer: 
-            name: userpool_authorizer
-            arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
+          # authorizer: 
+          #   name: userpool_authorizer
+          #   arn: ${ssm:/notes/${self:provider.stage}/UserPoolArn}
     iamRoleStatements:
       - Effect: "Allow"
         Action:

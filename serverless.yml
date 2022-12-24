@@ -217,7 +217,3 @@ resources:
         Name: /notes/${self:provider.stage}/UserPoolArn
         Type: String
         Value: {"Fn::GetAtt" : [ "CognitoUserPool", "Arn" ]}
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
